@@ -14,7 +14,6 @@
         targetPkgs = pkgs: with pkgs; [
           # deps
           libGL
-          #libglvnd
 
           # IDE
           jetbrains.jdk
@@ -24,6 +23,7 @@
           #stdenv.cc.cc
         ];
         runScript = ''
+          echo "Starting IntelliJ IDEA Community Edition..."
           bash -c "idea-community 2>1 > /dev/null &"
         '';
       }).env;
