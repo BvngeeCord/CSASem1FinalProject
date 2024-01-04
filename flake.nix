@@ -23,8 +23,10 @@
           #stdenv.cc.cc
         ];
         runScript = ''
+          #/usr/bin/env bash
           echo "Starting IntelliJ IDEA Community Edition..."
           bash -c "idea-community 2>1 > /dev/null &"
+          zsh
         '';
       }).env;
     };
