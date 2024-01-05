@@ -10,6 +10,7 @@ import org.lwjgl.system.MemoryStack;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
@@ -23,19 +24,28 @@ public class Main {
 
 	private static final long FRAMES_PER_SECOND = 60;
 	private static final long UPDATES_PER_SECOND = 20;
+	private static final float SECONDS_PER_NEW_CUBE = 0.5f;
 	private long window;
 	private Renderer renderer;
+	private List<GameObject> gameObjects;
 
 	public static void main(String[] args) {
-		new Main().app();
+		Scanner scanner = new Scanner(System.in);
+		System.out.print("Enter FPS (float): ");
+		float framesPerSecond = scanner.nextFloat();
+		System.out.print("Enter Updates per second (float): ");
+		float updatesPerSecond = scanner.nextFloat();
+		System.out.print("Enter seconds in between new cubes (float): ");
+		float secondsPerNewCube = scanner.nextFloat();
+		new Main().app(framesPerSecond, updatesPerSecond, secondsPerNewCube);
     }
 
-	private void app() {
+	private void app(float framesPerSecond, float updatesPerSecond, float secondsPerNewCube) {
 		initGlWindow();
 		this.renderer = new Renderer(window);
 
 		CubeGenerator cubeGenerator = new CubeGenerator();
-		List<GameObject> gameObjects = new ArrayList<>();
+		gameObjects = new ArrayList<>();
 		List<Vector3f> motions = new ArrayList<>();
 		List<Vector3f> rotations = new ArrayList<>();
 		for (int i = 0; i < 10; i++) {
@@ -45,18 +55,33 @@ public class Main {
 		}
 
 		// Application loop
-		long lastUpdateTime = System.currentTimeMillis();
+		long currentTime = System.currentTimeMillis();
+		long lastUpdateTime = currentTime;
+		long lastRenderTime = currentTime;
+		long lastNewCubeTime = currentTime;
 		while ( !glfwWindowShouldClose(window) ) {
-			if (System.currentTimeMillis() - lastUpdateTime >= (long) 1000 / UPDATES_PER_SECOND) {
+			// Update game state (cube motion)
+			if (System.currentTimeMillis() - lastUpdateTime >= (long) 1000 / updatesPerSecond) {
 				for (int i = 0; i < gameObjects.size(); i++) {
 					GameObject obj = gameObjects.get(i);
 					obj.setPosition(obj.getPosition().add(motions.get(i)));
 					obj.setRotation(obj.getRotation().add(rotations.get(i)));
 				}
+				lastUpdateTime = System.currentTimeMillis();
 			}
 
-			if (System.currentTimeMillis() - lastUpdateTime >= (long) 1000 / UPDATES_PER_SECOND) {
+			// Render scene
+			if (System.currentTimeMillis() - lastRenderTime >= (long) 1000 / framesPerSecond) {
 				renderer.render(gameObjects);
+				lastRenderTime = System.currentTimeMillis();
+			}
+
+			// Add new cubes
+			if ((System.currentTimeMillis() - lastNewCubeTime) / 1000f >= secondsPerNewCube) {
+				gameObjects.add(cubeGenerator.generateRandomCubeObject());
+				motions.add(cubeGenerator.generateRandomMotion());
+				rotations.add(cubeGenerator.generateRandomRotation());
+				lastNewCubeTime = System.currentTimeMillis();
 			}
 		}
 
@@ -108,6 +133,8 @@ public class Main {
 		glfwSetKeyCallback(window, (win, key, scancode, action, mods) -> {
 			if ( key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE )
 				glfwSetWindowShouldClose(window, true);
+			if ( key == GLFW_KEY_SPACE && action == GLFW_RELEASE )
+				this.gameObjects.forEach(obj -> obj.setPosition(0, 0, -2));
 		});
 		glfwSetFramebufferSizeCallback(window, (win, width, height) -> {
 			renderer.resize(width, height);
