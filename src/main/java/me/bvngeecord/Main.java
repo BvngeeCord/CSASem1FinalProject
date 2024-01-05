@@ -22,9 +22,6 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Main {
 
-	private static final long FRAMES_PER_SECOND = 60;
-	private static final long UPDATES_PER_SECOND = 20;
-	private static final float SECONDS_PER_NEW_CUBE = 0.5f;
 	private long window;
 	private Renderer renderer;
 	private List<GameObject> gameObjects;
